@@ -1,0 +1,105 @@
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Microservices Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 30px;
+        }
+
+        button {
+            padding: 8px 15px;
+            cursor: pointer;
+        }
+
+        input {
+            padding: 8px;
+        }
+
+        li {
+            margin: 8px 0;
+        }
+    </style>
+</head>
+<body>
+    <h2>Danh sách sản phẩm</h2>
+
+    <button onclick="loadProducts()">
+        Tải danh sách sản phẩm
+    </button>
+
+    <ul id="productList"></ul>
+
+    <h2>Tìm sản phẩm thông qua Order Service</h2>
+
+    <input type="number" id="productId"
+           placeholder="Nhập ID sản phẩm" min="1">
+
+    <button onclick="findProduct()">
+        Tìm sản phẩm
+    </button>
+
+    <pre id="result"></pre>
+
+    <script>
+        // Gọi trực tiếp Product Service
+        async function loadProducts() {
+            try {
+                const response = await fetch(
+                    "http://localhost:8081/api/products"
+                );
+
+                if (!response.ok) {
+                    throw new Error("Không thể tải sản phẩm");
+                }
+
+                const products = await response.json();
+                const list = document.getElementById("productList");
+
+                list.innerHTML = "";
+
+                products.forEach(product => {
+                    const li = document.createElement("li");
+                    li.textContent =
+                        `${product.id} - ${product.name}`;
+                    list.appendChild(li);
+                });
+            } catch (error) {
+                alert(error.message);
+            }
+        }
+
+        // Gọi Product Service thông qua Order Service
+        async function findProduct() {
+            const id = document.getElementById("productId").value;
+            const result = document.getElementById("result");
+
+            if (!id || Number(id) < 1) {
+                result.textContent = "Vui lòng nhập ID hợp lệ";
+                return;
+            }
+
+            try {
+                const response = await fetch(
+                    `http://localhost:8082/api/orders/product/${id}`
+                );
+
+                if (!response.ok) {
+                    throw new Error("Không tìm thấy sản phẩm");
+                }
+
+                const product = await response.json();
+
+                result.textContent =
+                    JSON.stringify(product, null, 2);
+            } catch (error) {
+                result.textContent = error.message;
+            }
+        }
+    </script>
+</body>
+</html>
